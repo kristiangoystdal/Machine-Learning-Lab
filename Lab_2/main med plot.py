@@ -3,6 +3,7 @@ from sklearn.linear_model import Ridge, Lasso
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 import csv
+import matplotlib.pyplot as plt
 
 # Load datasets
 x_train_path = "u_train.npy"
@@ -20,11 +21,13 @@ N_x = len(x_train)
 
 def phi(k, v_x, v_y, n, m, d):
     phi_vector = []
+    # Use y_train or y_test_pred for the autoregressive part
     for i in range(1, n + 1):
         if k - i >= 0:
             phi_vector.append(v_y[k - i])
         else:
             phi_vector.append(0)  # Zero padding for the beginning
+    # Use x_train or x_test for the exogenous part
     for i in range(m + 1):
         phi_vector.append(v_x[k - d - i])
     return phi_vector
@@ -115,7 +118,7 @@ N_full = len(x_full)
 X_test = []
 y_test_pred = []
 
-# Initial predictions using y_train for autoregressive part
+# Initial predictions using y_train from the last value of y_train
 for i in range(N_y, N_full):
     X_test.append(
         phi(i, x_full, np.concatenate((y_train, y_test_pred), axis=0), n, m, d)
@@ -125,9 +128,22 @@ for i in range(N_y, N_full):
 
 # Save the predictions
 np.save("output_test.npy", y_test_pred)
+
 print(len(y_test_pred))
 
-np.save(
-    "output_train_last_400.npy", y_test_pred[len(y_test_pred) - 400 : len(y_test_pred)]
-)
+np.save("output_train_last_400.npy", y_test_pred[len(y_test_pred) - 400 : len(y_test_pred)])
+
 print(len(y_test_pred[len(y_test_pred) - 400 : len(y_test_pred)]))
+
+# Plot the results
+plt.figure(figsize=(10, 6))
+plt.plot(range(len(y_train)), y_train, label="True Output", color="blue")
+plt.plot(
+    range(len(y_train), len(y_train) + len(y_test_pred)),
+    y_test_pred,
+    label="Ridge Predictions",
+    color="red",
+)
+plt.title("ARX Model: Ridge Regression")
+plt.legend()
+plt.show()
