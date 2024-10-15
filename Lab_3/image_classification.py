@@ -28,8 +28,8 @@ X = X / 255.0
 
 
 
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from tensorflow.keras.models import Sequential # type: ignore
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout # type: ignore
 
 input_shape = (48, 48, 1)
 output_shape = (1,)  # For binary output
