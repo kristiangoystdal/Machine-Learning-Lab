@@ -6,7 +6,7 @@ from tensorflow.keras.utils import to_categorical
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score
 
-# Load the SMOTE-augmented training data
+# Load the augmented training data
 X_train_smote = np.load("X_train_augmented.npy")
 y_train_smote = np.load("y_train_augmented.npy")
 
@@ -90,7 +90,7 @@ else:
 
 # Save the model
 # model.save("cnn_model_smote.h5")
-# print("CNN model trained with SMOTE data and saved as 'cnn_model_smote.h5'.")
+# print("CNN model trained with data and saved as 'cnn_model_smote.h5'.")
 
 from tensorflow.keras.utils import plot_model
 
