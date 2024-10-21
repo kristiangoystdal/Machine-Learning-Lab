@@ -1,6 +1,6 @@
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import balanced_accuracy_score
-from tensorflow.keras import models, layers
+from tensorflow.keras import models, layers # type: ignore
 import numpy as np
 
 from data_loader import load_data

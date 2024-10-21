@@ -1,5 +1,5 @@
 from data_loader import load_data
-from tensorflow.keras import models, layers
+from tensorflow.keras import models, layers  # type: ignore
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import balanced_accuracy_score
 import numpy as np
@@ -12,7 +12,11 @@ Xtrain2_a_reshaped = Xtrain2_a.reshape(-1, 7, 7, 1)
 
 # Split the data into training and validation sets
 X_train, X_val, Y_train, Y_val = train_test_split(
-    Xtrain2_a_reshaped, Ytrain2_a, test_size=0.2, random_state=42, stratify=Ytrain2_a, 
+    Xtrain2_a_reshaped,
+    Ytrain2_a,
+    test_size=0.2,
+    random_state=42,
+    stratify=Ytrain2_a,
 )
 
 # Build a simple CNN model
