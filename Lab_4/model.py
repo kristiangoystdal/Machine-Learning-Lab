@@ -3,7 +3,13 @@ from tensorflow.keras import layers, models
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import balanced_accuracy_score
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt# Calculate class weights (optional)
+from sklearn.utils.class_weight import compute_class_weight
+
+
+
+
+
 
 # Define the CNN architecture for image segmentation
 def create_segmentation_model(input_shape=(48, 48, 1)):
