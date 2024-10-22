@@ -17,29 +17,41 @@ def create_segmentation_model(input_shape=(48, 48, 1)):
 
     model.add(layers.Input(shape=input_shape))
 
-    # First Convolutional Layer
+    # First Convolutional Block
+    model.add(layers.Conv2D(32, (3, 3), activation='relu', padding='same'))
+    model.add(layers.BatchNormalization())
     model.add(layers.Conv2D(32, (3, 3), activation='relu', padding='same'))
     model.add(layers.MaxPooling2D((2, 2)))
 
-    # Second Convolutional Layer
+    # Second Convolutional Block
+    model.add(layers.Conv2D(64, (3, 3), activation='relu', padding='same'))
+    model.add(layers.BatchNormalization())
     model.add(layers.Conv2D(64, (3, 3), activation='relu', padding='same'))
     model.add(layers.MaxPooling2D((2, 2)))
 
-    # Third Convolutional Layer
+    # Third Convolutional Block
+    model.add(layers.Conv2D(128, (3, 3), activation='relu', padding='same'))
+    model.add(layers.BatchNormalization())
     model.add(layers.Conv2D(128, (3, 3), activation='relu', padding='same'))
     model.add(layers.MaxPooling2D((2, 2)))
 
-    # Upsampling and Convolutional Layers for Reconstruction (Deconvolution part)
+    # Bottleneck Layer
+    model.add(layers.Conv2D(256, (3, 3), activation='relu', padding='same'))
+    model.add(layers.Conv2D(256, (3, 3), activation='relu', padding='same'))
+
+    # Upsampling and Convolutional Blocks for Reconstruction
     model.add(layers.Conv2DTranspose(128, (3, 3), strides=2, padding='same', activation='relu'))
-    model.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
+    model.add(layers.Conv2D(128, (3, 3), padding='same', activation='relu'))
 
     model.add(layers.Conv2DTranspose(64, (3, 3), strides=2, padding='same', activation='relu'))
-    model.add(layers.Conv2D(32, (3, 3), padding='same', activation='relu'))
+    model.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
 
     model.add(layers.Conv2DTranspose(32, (3, 3), strides=2, padding='same', activation='relu'))
+    model.add(layers.Conv2D(32, (3, 3), padding='same', activation='relu'))
 
     # Output Layer for Segmentation (1 channel, 0 or 1)
     model.add(layers.Conv2D(1, (1, 1), activation='sigmoid', padding='same'))
+
 
     return model
 
@@ -70,10 +82,11 @@ X_train, X_test, Y_train, Y_test = train_test_split(X_train, Y_train, test_size=
 model = create_segmentation_model()
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
-history = model.fit(X_train, Y_train, epochs=25, batch_size=32, validation_split=0.2)
+history = model.fit(X_train, Y_train, epochs=25, batch_size=32, validation_data=(X_test,Y_test))
 
 test_predictions = model.predict(X_test)
-test_predictions_binary = np.round(test_predictions)  # Thresholding predictions to 0 or 1
+
+test_predictions_binary = np.where(test_predictions > 0.3, 1, 0)  # Thresholding predictions to 0 or 1
 
 # Flatten the arrays for calculating balanced accuracy
 Y_test_flat = Y_test.flatten()
@@ -99,4 +112,4 @@ for i in range(Y_test_flat.size):
     else:
         false_negative += 1
 
-print(f"True Positive: {true_positive}, False Positive: {false_positive}, True Negative {true_negative}, False Negative {false_negative}")
+print(f"True Positive: {100*true_positive/(true_positive+false_negative):.2f}%, True Negative {100*true_negative/(true_negative+false_positive):.2f}%")
