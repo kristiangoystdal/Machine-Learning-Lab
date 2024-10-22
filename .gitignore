@@ -1,0 +1,7 @@
+# Ignore all .npy files
+*.npy
+
+# Other common ignores
+*.log
+*.pyc
+__pycache__/
