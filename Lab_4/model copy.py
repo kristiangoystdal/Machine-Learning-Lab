@@ -6,53 +6,58 @@ from sklearn.metrics import balanced_accuracy_score
 import matplotlib.pyplot as plt# Calculate class weights (optional)
 from sklearn.utils.class_weight import compute_class_weight
 
+def create_crater_segmentation_model(input_shape=(48, 48, 1)):
+    inputs = layers.Input(shape=input_shape)
 
-# Define the CNN architecture for image segmentation
-def create_segmentation_model(input_shape=(48, 48, 1)):
-    model = models.Sequential()
+    # Encoder (Downsampling Path)
+    # Block 1
+    conv1 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(inputs)
+    conv1 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(conv1)
+    pool1 = layers.MaxPooling2D((2, 2))(conv1)
 
-    model.add(layers.Input(shape=input_shape))
+    # Block 2
+    conv2 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(pool1)
+    conv2 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(conv2)
+    pool2 = layers.MaxPooling2D((2, 2))(conv2)
 
-    # First Convolutional Block
-    model.add(layers.Conv2D(32, (3, 3), activation='relu', padding='same'))
-    model.add(layers.BatchNormalization())
-    model.add(layers.Conv2D(32, (3, 3), activation='relu', padding='same'))
-    model.add(layers.MaxPooling2D((2, 2)))
+    # Block 3
+    conv3 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(pool2)
+    conv3 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(conv3)
+    pool3 = layers.MaxPooling2D((2, 2))(conv3)
 
-    # Second Convolutional Block
-    model.add(layers.Conv2D(64, (3, 3), activation='relu', padding='same'))
-    model.add(layers.BatchNormalization())
-    model.add(layers.Conv2D(64, (3, 3), activation='relu', padding='same'))
-    model.add(layers.MaxPooling2D((2, 2)))
+    # Bottleneck (Middle)
+    bottleneck = layers.Conv2D(256, (3, 3), activation='relu', padding='same')(pool3)
+    bottleneck = layers.Conv2D(256, (3, 3), activation='relu', padding='same')(bottleneck)
 
-    # Third Convolutional Block
-    model.add(layers.Conv2D(128, (3, 3), activation='relu', padding='same'))
-    model.add(layers.BatchNormalization())
-    model.add(layers.Conv2D(128, (3, 3), activation='relu', padding='same'))
-    model.add(layers.MaxPooling2D((2, 2)))
+    # Decoder (Upsampling Path)
+    # Block 3
+    up3 = layers.Conv2DTranspose(128, (3, 3), strides=2, padding='same', activation='relu')(bottleneck)
+    concat3 = layers.concatenate([up3, conv3])
+    conv4 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(concat3)
+    conv4 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(conv4)
 
-    # Bottleneck Layer
-    model.add(layers.Conv2D(256, (3, 3), activation='relu', padding='same'))
-    model.add(layers.Conv2D(256, (3, 3), activation='relu', padding='same'))
+    # Block 2
+    up2 = layers.Conv2DTranspose(64, (3, 3), strides=2, padding='same', activation='relu')(conv4)
+    concat2 = layers.concatenate([up2, conv2])
+    conv5 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(concat2)
+    conv5 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(conv5)
 
-    # Upsampling and Convolutional Blocks for Reconstruction
-    model.add(layers.Conv2DTranspose(128, (3, 3), strides=2, padding='same', activation='relu'))
-    model.add(layers.Conv2D(128, (3, 3), padding='same', activation='relu'))
+    # Block 1
+    up1 = layers.Conv2DTranspose(32, (3, 3), strides=2, padding='same', activation='relu')(conv5)
+    concat1 = layers.concatenate([up1, conv1])
+    conv6 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(concat1)
+    conv6 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(conv6)
 
-    model.add(layers.Conv2DTranspose(64, (3, 3), strides=2, padding='same', activation='relu'))
-    model.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
+    # Output Layer
+    output = layers.Conv2D(1, (1, 1), activation='sigmoid', padding='same')(conv6)
 
-    model.add(layers.Conv2DTranspose(32, (3, 3), strides=2, padding='same', activation='relu'))
-    model.add(layers.Conv2D(32, (3, 3), padding='same', activation='relu'))
-
-    # Output Layer for Segmentation (1 channel, 0 or 1)
-    model.add(layers.Conv2D(1, (1, 1), activation='sigmoid', padding='same'))
-
+    model = models.Model(inputs, output)
 
     return model
 
+
 # Create the model
-model = create_segmentation_model()
+model = create_crater_segmentation_model()
 model.summary()
 
 # Compile the model
@@ -74,9 +79,6 @@ if Y_train.ndim == 2:  # If the output shape is (num_samples, 2304)
 
 # Split the data into training and testing sets
 X_train, X_test, Y_train, Y_test = train_test_split(X_train, Y_train, test_size=0.2, random_state=42)
-
-model = create_segmentation_model()
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
 history = model.fit(X_train, Y_train, epochs=25, batch_size=32, validation_data=(X_test,Y_test))
 
